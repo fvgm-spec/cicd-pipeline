@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - pip install -r requirements.txt
+
+  pre_build:
+    commands:
+      - echo "Running tests..."
+      - python -m pytest code/tests/ -v
+
+  build:
+    commands:
+      - echo "Building application..."
+      - zip -r app.zip code/ --exclude "code/tests/*"
+
+  post_build:
+    commands:
+      - echo "Build complete."
+
+artifacts:
+  files:
+    - app.zip
+    - infrastructure/**/*
+  discard-paths: no
