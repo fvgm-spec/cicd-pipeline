@@ -58,6 +58,23 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
         - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+
+  CloudFormationDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormationDeployRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
   BuildProject:
     Type: AWS::CodeBuild::Project
@@ -73,6 +90,8 @@ Resources:
         EnvironmentVariables:
           - Name: ENVIRONMENT
             Value: !Ref Environment
+          - Name: ARTIFACT_BUCKET
+            Value: !Ref ArtifactBucket
       Source:
         Type: CODEPIPELINE
         BuildSpec: code/buildspec.yml
@@ -119,16 +138,18 @@ Resources:
 
         - Name: DeployStaging
           Actions:
-            - Name: DeployStaging
+            - Name: DeployLambdas
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Provider: S3
+                Provider: CloudFormation
                 Version: '1'
               Configuration:
-                BucketName: !Ref ArtifactBucket
-                Extract: true
-                ObjectKey: !Sub "deployments/${Environment}/staging"
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub "clt-lambdas-${Environment}"
+                TemplatePath: BuildOutput::packaged.yaml
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CloudFormationDeployRole"
               InputArtifacts:
                 - Name: BuildOutput
 
@@ -147,12 +168,14 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Provider: S3
+                Provider: CloudFormation
                 Version: '1'
               Configuration:
-                BucketName: !Ref ArtifactBucket
-                Extract: true
-                ObjectKey: !Sub "deployments/${Environment}/production"
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub "clt-lambdas-${Environment}-prod"
+                TemplatePath: BuildOutput::packaged.yaml
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CloudFormationDeployRole"
               InputArtifacts:
                 - Name: BuildOutput
 
