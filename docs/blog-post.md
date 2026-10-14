@@ -306,6 +306,32 @@ A negligible cost for the reliability and speed gains.
 
 The complete implementation including CloudFormation templates, buildspec, and deploy script is available in this repository.
 
+## AWS CodePipeline vs GitHub Actions
+
+If you've used GitHub Actions before, the concepts map directly:
+
+| GitHub Actions | AWS CodePipeline |
+|---|---|
+| `.github/workflows/*.yml` | `pipeline.yaml` (CloudFormation) |
+| Workflow | Pipeline |
+| Job | Stage |
+| Step | Action |
+| `runs-on` runner | CodeBuild environment |
+| `actions/checkout` | Source stage (GitHub provider) |
+| `run: pytest` | CodeBuild `buildspec.yml` |
+| Environment secrets | SSM Parameter Store / Secrets Manager |
+| `workflow_dispatch` (manual trigger) | Manual approval stage |
+| Artifacts | S3 artifact bucket |
+
+Key differences worth knowing:
+
+- **Config-as-code vs infrastructure**: GitHub Actions lives entirely in your repo (`.github/workflows/`). CodePipeline is AWS infrastructure defined separately in CloudFormation — the pipeline itself is not in your repo.
+- **Concurrency**: GitHub Actions provides free concurrent runners within limits. CodeBuild has account-level concurrent build quotas that may need to be increased on new accounts.
+- **AWS-native integration**: CodePipeline has tighter native integration with IAM, CloudFormation, Lambda, and other AWS services. GitHub Actions relies on third-party actions or the AWS CLI for the same.
+- **Ecosystem**: GitHub Actions has a large marketplace of community actions. CodePipeline integrates deeply with AWS but has fewer third-party options.
+
+For teams already on AWS deploying to AWS services, CodePipeline is the natural fit. For open-source projects or multi-cloud setups, GitHub Actions offers more flexibility.
+
 ## Conclusion
 
 A CI/CD pipeline is one of the highest-leverage investments a software team can make. With AWS CodePipeline, CodeBuild, and CloudFormation, you can have a production-grade pipeline running in under an hour — fully automated, auditable, and extensible.
