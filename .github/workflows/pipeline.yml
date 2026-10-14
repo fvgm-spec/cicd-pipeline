@@ -54,6 +54,17 @@ jobs:
         with:
           name: packaged-template
 
+      - name: Resolve SSM parameters
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          echo "DEEPL_API_KEY=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_REDIRECT_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+
       - name: Deploy to staging
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -63,7 +74,12 @@ jobs:
           aws cloudformation deploy \
             --template-file packaged.yaml \
             --stack-name clt-lambdas-staging \
-            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --parameter-overrides \
+              DeeplApiKey="$DEEPL_API_KEY" \
+              SpotifyClientId="$SPOTIFY_CLIENT_ID" \
+              SpotifyClientSecret="$SPOTIFY_CLIENT_SECRET" \
+              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI"
 
   deploy-production:
     needs: deploy-staging
@@ -75,6 +91,17 @@ jobs:
         with:
           name: packaged-template
 
+      - name: Resolve SSM parameters
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          echo "DEEPL_API_KEY=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          echo "SPOTIFY_REDIRECT_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+
       - name: Deploy to production
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -84,4 +111,9 @@ jobs:
           aws cloudformation deploy \
             --template-file packaged.yaml \
             --stack-name clt-lambdas-production \
-            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --parameter-overrides \
+              DeeplApiKey="$DEEPL_API_KEY" \
+              SpotifyClientId="$SPOTIFY_CLIENT_ID" \
+              SpotifyClientSecret="$SPOTIFY_CLIENT_SECRET" \
+              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI"

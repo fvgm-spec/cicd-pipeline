@@ -7,6 +7,19 @@ Globals:
     Runtime: python3.11
     Timeout: 30
 
+Parameters:
+  DeeplApiKey:
+    Type: String
+    NoEcho: true
+  SpotifyClientId:
+    Type: String
+    NoEcho: true
+  SpotifyClientSecret:
+    Type: String
+    NoEcho: true
+  SpotifyRedirectUri:
+    Type: String
+
 Resources:
 
   EspnFunction:
@@ -24,7 +37,7 @@ Resources:
       Handler: lambda_handler.lambda_handler
       Environment:
         Variables:
-          DEEPL_API_KEY: !Sub "{{resolve:ssm-secure:/clt/deepl/api_key}}"
+          DEEPL_API_KEY: !Ref DeeplApiKey
 
   SpotifyFunction:
     Type: AWS::Serverless::Function
@@ -34,6 +47,6 @@ Resources:
       Handler: lambda_handler.lambda_handler
       Environment:
         Variables:
-          CLIENT_ID: !Sub "{{resolve:ssm-secure:/clt/spotify/client_id}}"
-          CLIENT_SECRET: !Sub "{{resolve:ssm-secure:/clt/spotify/client_secret}}"
-          REDIRECT_URI: !Sub "{{resolve:ssm-secure:/clt/spotify/redirect_uri}}"
+          CLIENT_ID: !Ref SpotifyClientId
+          CLIENT_SECRET: !Ref SpotifyClientSecret
+          REDIRECT_URI: !Ref SpotifyRedirectUri
