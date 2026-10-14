@@ -1,0 +1,87 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r code/deepl/requirements.txt
+          pip install -r code/spotify/requirements.txt
+          pip install aws-sam-cli pytest
+
+      - name: Run tests
+        run: python -m pytest code/tests/ -v
+
+      - name: SAM build
+        run: sam build --template code/template.yaml --build-dir .aws-sam/build
+
+      - name: SAM package
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          sam package \
+            --template-file .aws-sam/build/template.yaml \
+            --output-template-file packaged.yaml \
+            --s3-bucket cicd-pipeline-artifacts-dev-942709712049 \
+            --s3-prefix sam-packages
+
+      - name: Upload packaged template
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-template
+          path: packaged.yaml
+
+  deploy-staging:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Download packaged template
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-template
+
+      - name: Deploy to staging
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws cloudformation deploy \
+            --template-file packaged.yaml \
+            --stack-name clt-lambdas-staging \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
+
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download packaged template
+        uses: actions/download-artifact@v4
+        with:
+          name: packaged-template
+
+      - name: Deploy to production
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          aws cloudformation deploy \
+            --template-file packaged.yaml \
+            --stack-name clt-lambdas-production \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
