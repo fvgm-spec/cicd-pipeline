@@ -87,7 +87,8 @@ jobs:
               DeeplApiKey="$DEEPL_API_KEY" \
               SpotifyClientId="$SPOTIFY_CLIENT_ID" \
               SpotifyClientSecret="$SPOTIFY_CLIENT_SECRET" \
-              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI"
+              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI" \
+              Environment=staging
 
   deploy-production:
     needs: deploy-staging
@@ -132,4 +133,5 @@ jobs:
               DeeplApiKey="$DEEPL_API_KEY" \
               SpotifyClientId="$SPOTIFY_CLIENT_ID" \
               SpotifyClientSecret="$SPOTIFY_CLIENT_SECRET" \
-              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI"
+              SpotifyRedirectUri="$SPOTIFY_REDIRECT_URI" \
+              Environment=production

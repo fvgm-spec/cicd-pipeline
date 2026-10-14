@@ -19,20 +19,23 @@ Parameters:
     NoEcho: true
   SpotifyRedirectUri:
     Type: String
+  Environment:
+    Type: String
+    Default: staging
 
 Resources:
 
   EspnFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: clt-espn-results
+      FunctionName: !Sub "clt-espn-results-${Environment}"
       CodeUri: espn/
       Handler: lambda_handler.lambda_handler
 
   DeeplFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: clt-deepl-translator
+      FunctionName: !Sub "clt-deepl-translator-${Environment}"
       CodeUri: deepl/
       Handler: lambda_handler.lambda_handler
       Environment:
@@ -42,7 +45,7 @@ Resources:
   SpotifyFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: clt-spotify
+      FunctionName: !Sub "clt-spotify-${Environment}"
       CodeUri: spotify/
       Handler: lambda_handler.lambda_handler
       Environment:
