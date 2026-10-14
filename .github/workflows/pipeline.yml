@@ -60,10 +60,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          echo "DEEPL_API_KEY=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_REDIRECT_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          DEEPL=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)
+          S_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)
+          S_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)
+          S_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$DEEPL"
+          echo "::add-mask::$S_ID"
+          echo "::add-mask::$S_SECRET"
+          echo "DEEPL_API_KEY=$DEEPL" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_ID=$S_ID" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_SECRET=$S_SECRET" >> $GITHUB_ENV
+          echo "SPOTIFY_REDIRECT_URI=$S_URI" >> $GITHUB_ENV
 
       - name: Deploy to staging
         env:
@@ -75,6 +82,7 @@ jobs:
             --template-file packaged.yaml \
             --stack-name clt-lambdas-staging \
             --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
             --parameter-overrides \
               DeeplApiKey="$DEEPL_API_KEY" \
               SpotifyClientId="$SPOTIFY_CLIENT_ID" \
@@ -97,10 +105,17 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          echo "DEEPL_API_KEY=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_CLIENT_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_CLIENT_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "SPOTIFY_REDIRECT_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
+          DEEPL=$(aws ssm get-parameter --name /clt/deepl/api_key --with-decryption --query Parameter.Value --output text)
+          S_ID=$(aws ssm get-parameter --name /clt/spotify/client_id --with-decryption --query Parameter.Value --output text)
+          S_SECRET=$(aws ssm get-parameter --name /clt/spotify/client_secret --with-decryption --query Parameter.Value --output text)
+          S_URI=$(aws ssm get-parameter --name /clt/spotify/redirect_uri --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$DEEPL"
+          echo "::add-mask::$S_ID"
+          echo "::add-mask::$S_SECRET"
+          echo "DEEPL_API_KEY=$DEEPL" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_ID=$S_ID" >> $GITHUB_ENV
+          echo "SPOTIFY_CLIENT_SECRET=$S_SECRET" >> $GITHUB_ENV
+          echo "SPOTIFY_REDIRECT_URI=$S_URI" >> $GITHUB_ENV
 
       - name: Deploy to production
         env:
@@ -112,6 +127,7 @@ jobs:
             --template-file packaged.yaml \
             --stack-name clt-lambdas-production \
             --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
             --parameter-overrides \
               DeeplApiKey="$DEEPL_API_KEY" \
               SpotifyClientId="$SPOTIFY_CLIENT_ID" \
