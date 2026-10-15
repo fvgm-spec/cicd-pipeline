@@ -35,7 +35,7 @@ This hybrid approach gives you the best of both worlds: GitHub Actions' flexibil
 ## Pipeline Architecture
 
 ```
-GitHub Push to main
+GitHub Push to master
     │
     ▼
 [build-and-test job]     ← GitHub Actions runner
@@ -119,7 +119,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "clt-espn-results-${Environment}"
-      CodeUri: espn/
+      CodeUri: espn-results-cli/
       Handler: lambda_handler.lambda_handler
 
   DeeplFunction:
@@ -147,14 +147,14 @@ Resources:
 
 ## The GitHub Actions Workflow
 
-The workflow lives at `.github/workflows/pipeline.yml` and has three jobs:
+The workflow lives at `.github/workflows/pipeline.yml` inside the application repo (`fvgm-spec/clt`) and triggers on every push to `master`. Having the pipeline definition co-located with the application code means there is no separate infrastructure repo to maintain — a single push deploys everything.
 
 ```yaml
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 jobs:
   build-and-test:
@@ -166,13 +166,14 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          pip install -r code/deepl/requirements.txt
-          pip install -r code/spotify/requirements.txt
+          pip install -r deepl/requirements.txt
+          pip install -r spotify/requirements.txt
+          pip install -r espn-results-cli/requirements.txt
           pip install aws-sam-cli pytest
       - name: Run tests
-        run: python -m pytest code/tests/ -v
+        run: python -m pytest tests/ -v
       - name: SAM build
-        run: sam build --template code/template.yaml --build-dir .aws-sam/build
+        run: sam build --template template.yaml --build-dir .aws-sam/build
       - name: SAM package
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -308,10 +309,10 @@ Significantly cheaper than the pure CodePipeline + CodeBuild setup (~$9/month).
 
 ## Getting Started
 
-1. Clone this repo and push to your own GitHub account
+1. Fork [fvgm-spec/clt](https://github.com/fvgm-spec/clt) and push to your own GitHub account
 2. Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as GitHub repository secrets
 3. Store your app secrets in SSM Parameter Store under `/clt/`
-4. Push to `main` — the pipeline triggers automatically
+4. Push to `master` — the pipeline triggers automatically
 5. Configure the `production` GitHub environment with a required reviewer for a manual approval gate
 
 ## Conclusion
